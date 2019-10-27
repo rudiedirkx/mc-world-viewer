@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>Minecraft world viewer</title>
+</head>
+
+<body>
+
+<p>Choose save directory: <input type="file" directory webkitdirectory /><!-- <button>Unpack</button> --></p>
+
+<script>
+document.querySelector('input[type=file]').addEventListener('change', function(e) {
+	const files = this.files;
+	console.log(files);
+	const paths = Array.from(files).map(file => file.webkitRelativePath.replace(/^[^\/]+\//, ''));
+	console.log(paths);
+	if (paths.length == 0) {
+		return;
+	}
+	if (!paths.includes('level.dat')) {
+		alert("Invalid directory. Can't find 'level.dat'.");
+		return;
+	}
+});
+</script>
+
+</body>
+
+</html>
