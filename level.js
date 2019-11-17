@@ -1,5 +1,5 @@
 const zlib = require('zlib');
-const NbtReader = require('node-nbt').NbtReader;
+const nbt = require('nbt');
 const fs = require('fs');
 
 fs.readFile(process.argv[2] || 'level.dat', function(err, data) {
@@ -8,15 +8,8 @@ fs.readFile(process.argv[2] || 'level.dat', function(err, data) {
 		return;
 	}
 
-	zlib.gunzip(data, function(err, buffer) {
-		if (err) {
-			console.log('zlib error', err);
-			return;
-		}
-
-		var d = NbtReader.readTag(buffer);
-		d = NbtReader.removeBufferKey(d);
-		// console.log(d.val[0]);
-		NbtReader.printAscii(d);
+	nbt.parse(data, function(err, tree) {
+		console.log(err, tree);
+		process.stdout.write(JSON.stringify(tree, null, '  ') + '\n');
 	});
 });

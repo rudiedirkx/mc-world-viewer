@@ -43,10 +43,6 @@ nbt@^0.8.1:
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/nbt/-/nbt-0.8.1.tgz#4f1d8ba9ced6ab5fdead82524a1c24932cf9c22e"
 
-node-nbt@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/node-nbt/-/node-nbt-1.0.0.tgz#1971d9279bd8d4dcd628697abccc90b48f1c7b3f"
-
 prismarine-nbt@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/prismarine-nbt/-/prismarine-nbt-1.2.1.tgz#4b0e50e538a4676ee259ae0588120360ab39110d"
