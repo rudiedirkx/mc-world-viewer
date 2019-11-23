@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const READ_CHUNKS = 100; // max 1024
 const CHUNK_DATA_OFFSET = 5;
+const B4_MAP_TO_A = 'abcdefghijklmnopqrstuvwxyz+0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYX';
 
 function getChunk(fileBuffer, sectorOffset, sectorCount = 1) {
 	const chunk = {
@@ -29,6 +30,39 @@ function getChunk(fileBuffer, sectorOffset, sectorCount = 1) {
 	});
 }
 
+function add4bInt(b4s, int) {
+	b4s.push((int & 0x0000000f) >> 0);
+	b4s.push((int & 0x000000f0) >> 4);
+	b4s.push((int & 0x00000f00) >> 8);
+	b4s.push((int & 0x0000f000) >> 12);
+	b4s.push((int & 0x000f0000) >> 16);
+	b4s.push((int & 0x00f00000) >> 20);
+	b4s.push((int & 0x0f000000) >> 24);
+	b4s.push((int & 0xf0000000) >> 28);
+}
+
+function extractChunkBlocks(chunk) {
+	chunk.nbt.value.Level.value.Sections.value.value.forEach(section => {
+		if (section.Palette) {
+			section.Palette.value.value = section.Palette.value.value.map((type, i) => {
+				return B4_MAP_TO_A[i] + ' = ' + type.Name.value;
+			});
+		}
+
+		if (section.BlockStates) {
+			const longs = section.BlockStates.value;
+			const b4s = [];
+			longs.forEach(([a, b]) => {
+				add4bInt(b4s, a);
+				add4bInt(b4s, b);
+			});
+console.log(b4s.length);
+			section.BLOCKS = b4s.map(b => B4_MAP_TO_A[b]).join('');
+		}
+	});
+	return chunk;
+}
+
 function debugChunk(name) {
 	return function(chunk) {
 		console.log({
@@ -46,18 +80,12 @@ fs.readFile(process.argv[2] || 'r.0.0.mca', function(err, data) {
 		return;
 	}
 
-	let chunk1 = {};
-
 	const chunkGetters = [];
 	for ( let i = 0; i < READ_CHUNKS; i++ ) {
 		let o = i * 4;
 
 		let sectorOffset = data.readUIntBE(o, 3);
 		let sectorCount = data.readUIntBE(o + 3, 1);
-// console.log(sectorOffset, sectorCount);
-
-		chunk1.sectorOffset = sectorOffset;
-		chunk1.sectorCount = sectorCount;
 
 		chunkGetters.push(getChunk(data, sectorOffset, sectorCount));
 	}
@@ -72,24 +100,9 @@ fs.readFile(process.argv[2] || 'r.0.0.mca', function(err, data) {
 
 		i = Math.floor(Math.random() * chunks.length);
 		rand = chunks[i];
+		extractChunkBlocks(rand);
 		debugChunk(`rand: ${i}`)(rand);
+
+		fs.writeFileSync('chunk.json', JSON.stringify(rand.nbt));
 	});
-
-	return;
-
-// 	for ( let o = 4096; o < 8192; o += 4 ) {
-// 		let utc = data.readUIntBE(o, 4);
-// 		let date = new Date(utc * 1000);
-// console.log(String(date));
-
-// 		chunk1.timestamp = utc;
-
-// 		break;
-// 	}
-
-	chunk1.header = data.slice(chunk1.sectorOffset * 4096, chunk1.sectorOffset * 4096 + chunk1.sectorCount * 4096);
-	chunk1.byteLength = chunk1.header.readUIntBE(0, 4);
-	chunk1.compression = chunk1.header.readUIntBE(4, 1);
-
-	getChunk(data, chunk1.sectorOffset, chunk1.sectorCount).then(debugChunk('chunk1'));
 });
